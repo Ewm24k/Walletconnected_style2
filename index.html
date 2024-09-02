@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Connect Wallet with WalletConnect</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            padding: 50px;
+        }
+        button {
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            margin: 10px;
+        }
+        #qrCode {
+            margin-top: 20px;
+            max-width: 100%;
+        }
+        #wallet-modal {
+            display: none; /* Hidden by default */
+            position: fixed;
+            z-index: 1;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+        }
+        .modal-content {
+            background-color: white;
+            margin: 15% auto;
+            padding: 20px;
+            border-radius: 5px;
+            width: 300px;
+            text-align: center;
+            position: relative;
+        }
+        .close {
+            position: absolute;
+            right: 10px;
+            top: 10px;
+            cursor: pointer;
+            font-size: 24px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Connect Wallet</h1>
+    
+    <button id="metamaskButton">Connect with MetaMask</button>
+    <button id="trustwalletButton">Connect with Trust Wallet</button>
+    
+    <div id="accountInfo">
+        <p id="account"></p>
+        <p id="balance"></p>
+    </div>
+    
+    
+    <div id="wallet-modal">
+        <div class="modal-content">
+            <span id="close-modal" class="close">&times;</span>
+            <h2>Scan QR Code</h2>
+            <img id="qrCode" alt="QR Code" />
+        </div>
+    </div>
+    
+    <script src="https://cdn.jsdelivr.net/npm/@walletconnect/web3-provider@1.6.6/dist/umd/index.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/web3@1.5.3/dist/web3.min.js"></script>
+
+    <script>
+        async function connectWallet(method) {
+            try {
+                // Initialize WalletConnect provider
+                const provider = new WalletConnectProvider.default({
+                    rpc: {
+                        56: "https://bsc-dataseed.binance.org/"
+                    },
+                    chainId: 56
+                });
+
+                provider.on("display_uri", (uri) => {
+                    document.getElementById("qrCode").src = uri;
+                    document.getElementById("wallet-modal").style.display = "block";
+                });
+
+                await provider.enable();
+                const web3 = new Web3(provider);
+                const accounts = await web3.eth.getAccounts();
+                const balance = await web3.eth.getBalance(accounts[0]);
+                document.getElementById("account").innerText = "Connected account: " + accounts[0];
+                document.getElementById("balance").innerText = "Balance: " + web3.utils.fromWei(balance, "ether") + " BNB";
+
+                // Additional handling for MetaMask if needed
+                if (method === "meta") {
+                    // MetaMask specific code if any
+                    // For example, check if provider is MetaMask
+                    if (window.ethereum && window.ethereum.isMetaMask) {
+                        document.getElementById("account").innerText = "Connected with MetaMask: " + accounts[0];
+                    }
+                }
+            } catch (error) {
+                console.error("Error connecting wallet:", error);
+            }
+        }
+
+        document.getElementById("metamaskButton").addEventListener("click", () => connectWallet("meta"));
+        document.getElementById("trustwalletButton").addEventListener("click", () => connectWallet("trust"));
+
+        // Close QR Code Modal
+        document.getElementById("close-modal").addEventListener("click", function() {
+            document.getElementById("wallet-modal").style.display = "none";
+        });
+
+        window.addEventListener("click", function(event) {
+            if (event.target === document.getElementById("wallet-modal")) {
+                document.getElementById("wallet-modal").style.display = "none";
+            }
+        });
+    </script>
+</body>
+</html>
